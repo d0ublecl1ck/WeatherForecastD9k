@@ -18,4 +18,10 @@ public interface WeatherDao {
 
     @Query("DELETE FROM weather WHERE city = :city")
     void deleteByCity(String city);
+
+    @Query("DELETE FROM weather_table WHERE city = :city")
+    void deleteWeatherByCity(String city);
+
+    @Query("DELETE FROM weather_table WHERE cityCode = :cityCode")
+    void deleteWeatherByCode(String cityCode);
 } 

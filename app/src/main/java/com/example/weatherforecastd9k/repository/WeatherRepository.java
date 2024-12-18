@@ -39,6 +39,11 @@ public class WeatherRepository {
     }
 
     public void fetchWeatherFromApi(String cityName, FetchCallback callback) {
+        // 添加清除旧数据的机制
+        WeatherDatabase.databaseWriteExecutor.execute(() -> {
+            weatherDao.deleteWeatherByCity(cityName);  // 需要在 WeatherDao 中添加这个方法
+        });
+        
         Log.d(TAG, "Converting city name to code: " + cityName);
         
         // 先通过地理编码API获取城市编码
@@ -46,6 +51,10 @@ public class WeatherRepository {
             .enqueue(new Callback<GeoResponse>() {
                 @Override
                 public void onResponse(Call<GeoResponse> call, Response<GeoResponse> response) {
+                    Log.d(TAG, "Geocode response: " + response.raw().toString());
+                    if (response.body() != null) {
+                        Log.d(TAG, "Geocode body: " + response.body().toString());
+                    }
                     if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
                         List<GeoResponse.Geocode> geocodes = response.body().getGeocodes();
                         if (geocodes != null && !geocodes.isEmpty()) {
@@ -102,8 +111,9 @@ public class WeatherRepository {
                                     live.getReporttime()
                                 );
                                 
-                                // 在后台线程中保存数据
+                                // 在保存新数据之前清除旧数据
                                 WeatherDatabase.databaseWriteExecutor.execute(() -> {
+                                    weatherDao.deleteWeatherByCode(cityCode);  // 需要在 WeatherDao 中添加这个方法
                                     weatherDao.insert(weatherEntity);
                                     Log.d(TAG, "Weather data saved to DB for city: " + cityCode);
                                 });
