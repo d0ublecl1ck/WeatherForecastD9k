@@ -44,4 +44,11 @@ dependencies {
     annotationProcessor "androidx.room:room-compiler:$room_version"
 
     implementation "androidx.viewpager2:viewpager2:1.0.0"
+
+    // 高德地图依赖
+    implementation 'com.amap.api:3dmap:9.2.0'
+    // 搜索功能
+    implementation 'com.amap.api:search:9.2.0'
+    // 定位功能
+    implementation 'com.amap.api:location:6.1.0'
 }
