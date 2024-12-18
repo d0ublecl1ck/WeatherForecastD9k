@@ -14,18 +14,16 @@ public class WeatherPagerAdapter extends FragmentStateAdapter {
     public Fragment createFragment(int position) {
         switch (position) {
             case 0:
-                return new CurrentWeatherFragment();
+                return new TodayWeatherFragment();
             case 1:
-                return new ForecastWeatherFragment();
-            case 2:
-                return new LifeIndexFragment();
+                return new RecommendWeatherFragment();
             default:
-                return new CurrentWeatherFragment();
+                return new TodayWeatherFragment();
         }
     }
 
     @Override
     public int getItemCount() {
-        return 3;
+        return 2;
     }
 } 

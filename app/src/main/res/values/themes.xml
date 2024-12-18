@@ -9,10 +9,11 @@
         <item name="android:colorBackground">@color/backgroundColor</item>
         <item name="colorSurface">@color/surfaceColor</item>
         <item name="colorError">@color/errorColor</item>
-        <item name="android:statusBarColor">@color/primaryDarkColor</item>
+        <item name="android:statusBarColor">@color/primaryColor</item>
         <item name="android:textColorPrimary">@color/primaryTextColor</item>
         <item name="android:textColorSecondary">@color/secondaryTextColor</item>
         <item name="android:divider">@color/dividerColor</item>
+        <item name="android:windowLightStatusBar">false</item>
     </style>
 
     <style name="Theme.WeatherForecastD9k" parent="Base.Theme.WeatherForecastD9k" />

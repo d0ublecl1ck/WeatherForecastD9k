@@ -38,11 +38,13 @@ public class MainActivity extends AppCompatActivity {
             return true;
         });
 
-        // 设置默认选中的Fragment
+        // 修改默认选中的Fragment
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
-                .replace(R.id.nav_host_fragment, new WeatherFragment())
+                .replace(R.id.nav_host_fragment, new MapFragment())
                 .commit();
+            // 设置底部导航栏默认选中项
+            bottomNav.setSelectedItemId(R.id.navigation_map);
         }
     }
 }

@@ -31,13 +31,10 @@ public class WeatherFragment extends Fragment {
             (tab, position) -> {
                 switch (position) {
                     case 0:
-                        tab.setText("实时天气");
+                        tab.setText("今日");
                         break;
                     case 1:
-                        tab.setText("未来预报");
-                        break;
-                    case 2:
-                        tab.setText("生活指数");
+                        tab.setText("推荐");
                         break;
                 }
             }
