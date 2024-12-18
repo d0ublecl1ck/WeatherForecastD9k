@@ -24,6 +24,8 @@ import androidx.preference.PreferenceManager;
 import androidx.preference.SwitchPreferenceCompat;
 
 import com.example.weatherforecastd9k.R;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.lljjcoder.citypickerview.widget.CityPicker;
 import de.hdodenhof.circleimageview.CircleImageView;
 
@@ -35,6 +37,15 @@ import java.io.OutputStream;
 import android.content.pm.PackageManager;
 import android.Manifest;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
+import android.util.Log;
+import com.example.weatherforecastd9k.network.DistrictApi;
+import com.example.weatherforecastd9k.network.DistrictResponse;
+import com.example.weatherforecastd9k.network.RetrofitClient;
+
 public class SettingsFragment extends PreferenceFragmentCompat implements
         SharedPreferences.OnSharedPreferenceChangeListener {
     
@@ -42,6 +53,7 @@ public class SettingsFragment extends PreferenceFragmentCompat implements
     private static final int PERMISSION_REQUEST_CODE = 1;
     private SharedPreferences prefs;
     private CircleImageView avatarImage;
+    private static final String TAG = "SettingsFragment";
 
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
@@ -196,15 +208,49 @@ public class SettingsFragment extends PreferenceFragmentCompat implements
                 
                 // 保存选择的城市，包含完整信息
                 String fullLocation = city + district;
-                prefs.edit()
-                    .putString("default_city", fullLocation)
-                    .putBoolean("auto_location", false)  // 选择城市时关闭自动定位
-                    .apply();
-                
-                // 更新UI
-                findPreference("default_city").setSummary(fullLocation);
-                ((SwitchPreferenceCompat) findPreference("auto_location")).setChecked(false);
-                Toast.makeText(requireContext(), "已设置默认城市: " + fullLocation, Toast.LENGTH_SHORT).show();
+
+                // 获取城市编码
+                RetrofitClient.create(DistrictApi.class)
+                    .getDistrict(RetrofitClient.getApiKey(), city, 1, "base")
+                    .enqueue(new Callback<DistrictResponse>() {
+                        @Override
+                        public void onResponse(Call<DistrictResponse> call, Response<DistrictResponse> response) {
+                            if (response.isSuccessful() && response.body() != null 
+                                && response.body().getDistricts() != null 
+                                && !response.body().getDistricts().isEmpty()) {
+
+                                Log.d(TAG, "Response json: \n" + new GsonBuilder()
+                                        .setPrettyPrinting()
+                                        .create()
+                                        .toJson(response.body()));
+
+
+                                String adcode = response.body().getDistricts().get(0).getAdcode();
+                                
+                                // 保存城市信息和编码
+                                prefs.edit()
+                                    .putString("default_city", fullLocation)
+                                    .putString("city_code", adcode)
+                                    .putBoolean("auto_location", false)
+                                    .apply();
+                                
+                                // 更新UI
+                                findPreference("default_city").setSummary(fullLocation);
+                                ((SwitchPreferenceCompat) findPreference("auto_location")).setChecked(false);
+                                Toast.makeText(requireContext(), 
+                                    "已设置默认城市: " + fullLocation, Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(requireContext(), 
+                                    "获取城市编码失败", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Call<DistrictResponse> call, Throwable t) {
+                            Toast.makeText(requireContext(), 
+                                "网络请求失败: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
             }
         });
     }

@@ -10,22 +10,54 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/dateText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="16sp"
-            android:textStyle="bold"/>
-
+        <!-- 头部信息 -->
         <LinearLayout
+            android:id="@+id/headerContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="16dp"
+            android:background="?android:attr/selectableItemBackground">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/dateText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="16sp"
+                    android:textStyle="bold"/>
+
+                <TextView
+                    android:id="@+id/weatherSummary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"/>
+            </LinearLayout>
+
+            <ImageView
+                android:id="@+id/expandIcon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_expand_more"/>
+        </LinearLayout>
+
+        <!-- 详细信息 -->
+        <LinearLayout
+            android:id="@+id/detailsContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:layout_marginTop="8dp">
+            android:padding="16dp"
+            android:visibility="gone">
 
+            <!-- 温度 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -50,6 +82,7 @@
                     android:layout_marginStart="16dp"/>
             </LinearLayout>
 
+            <!-- 天气 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -74,6 +107,7 @@
                     android:layout_marginStart="16dp"/>
             </LinearLayout>
 
+            <!-- 风向 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -98,6 +132,7 @@
                     android:layout_marginStart="16dp"/>
             </LinearLayout>
 
+            <!-- 风力 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -122,6 +157,7 @@
                     android:layout_marginStart="16dp"/>
             </LinearLayout>
 
+            <!-- 更新时间 -->
             <TextView
                 android:id="@+id/reportTime"
                 android:layout_width="wrap_content"
@@ -130,6 +166,7 @@
                 android:layout_marginTop="8dp"
                 android:textSize="12sp"
                 android:textColor="@android:color/darker_gray"/>
+
         </LinearLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView> 

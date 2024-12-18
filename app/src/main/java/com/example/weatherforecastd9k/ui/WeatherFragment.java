@@ -1,14 +1,28 @@
 package com.example.weatherforecastd9k.ui;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
+
 import androidx.fragment.app.Fragment;
+import androidx.preference.PreferenceManager;
 import androidx.viewpager2.widget.ViewPager2;
+
 import com.example.weatherforecastd9k.R;
+import com.example.weatherforecastd9k.network.RetrofitClient;
+import com.example.weatherforecastd9k.network.WeatherApi;
+import com.example.weatherforecastd9k.network.WeatherResponse;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
+import com.google.gson.GsonBuilder;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 /**
  * 天气Fragment,用于显示天气相关信息
@@ -30,6 +44,7 @@ public class WeatherFragment extends Fragment {
         
         initViews(view);
         setupViewPager();
+        fetchWeatherData(); // 获取天气数据
         
         return view;
     }
@@ -63,5 +78,39 @@ public class WeatherFragment extends Fragment {
                 }
             }
         ).attach();
+    }
+    
+    private void fetchWeatherData() {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+        String cityCode = prefs.getString("city_code", "");
+        
+        if (cityCode.isEmpty()) {
+            Toast.makeText(requireContext(), "请先选择城市", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        RetrofitClient.create(WeatherApi.class)
+            .getWeather(RetrofitClient.getApiKey(), cityCode, "all")
+            .enqueue(new Callback<WeatherResponse>() {
+                @Override
+                public void onResponse(Call<WeatherResponse> call, Response<WeatherResponse> response) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        // 使用Gson格式化打印JSON
+                        Log.d(TAG, "Weather Response: \n" + new GsonBuilder()
+                                .setPrettyPrinting()
+                                .create()
+                                .toJson(response.body()));
+                    } else {
+                        Toast.makeText(requireContext(), 
+                            "获取天气数据失败", Toast.LENGTH_SHORT).show();
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<WeatherResponse> call, Throwable t) {
+                    Toast.makeText(requireContext(), 
+                        "网络请求失败: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            });
     }
 } 
