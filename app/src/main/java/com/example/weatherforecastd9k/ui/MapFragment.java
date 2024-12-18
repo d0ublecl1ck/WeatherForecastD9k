@@ -1,6 +1,7 @@
 package com.example.weatherforecastd9k.ui;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -24,6 +25,11 @@ import com.amap.api.maps.MapView;
 import com.amap.api.maps.model.LatLng;
 import com.amap.api.maps.model.MyLocationStyle;
 import com.example.weatherforecastd9k.R;
+import com.amap.api.services.geocoder.GeocodeAddress;
+import com.amap.api.services.geocoder.GeocodeQuery;
+import com.amap.api.services.geocoder.GeocodeResult;
+import com.amap.api.services.geocoder.GeocodeSearch;
+import com.amap.api.services.geocoder.RegeocodeResult;
 
 public class MapFragment extends Fragment implements AMapLocationListener {
     private MapView mapView;
@@ -31,6 +37,8 @@ public class MapFragment extends Fragment implements AMapLocationListener {
     private AMapLocationClient locationClient;
     private TextView cityNameText;
     private static final int PERMISSION_REQUEST_CODE = 1;
+    private static final String PREFS_NAME = "WeatherSettings";
+    private static final String DEFAULT_CITY_KEY = "default_city";
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -66,14 +74,26 @@ public class MapFragment extends Fragment implements AMapLocationListener {
     private void initMap() {
         if (aMap == null) {
             aMap = mapView.getMap();
-            // 设置定位蓝点
-            MyLocationStyle myLocationStyle = new MyLocationStyle();
-            myLocationStyle.myLocationType(MyLocationStyle.LOCATION_TYPE_LOCATION_ROTATE);
-            myLocationStyle.interval(2000);
-            aMap.setMyLocationStyle(myLocationStyle);
-            aMap.setMyLocationEnabled(true);
+            
+            // 检查是否有默认城市
+            String defaultCity = requireContext()
+                .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                .getString(DEFAULT_CITY_KEY, "");
+            
+            if (defaultCity.isEmpty()) {
+                // 如果没有默认城市，才启用定位蓝点
+                MyLocationStyle myLocationStyle = new MyLocationStyle();
+                myLocationStyle.myLocationType(MyLocationStyle.LOCATION_TYPE_LOCATION_ROTATE);
+                myLocationStyle.interval(2000);
+                aMap.setMyLocationStyle(myLocationStyle);
+                aMap.setMyLocationEnabled(true);
+            } else {
+                // 有默认城市时，禁用定位蓝点
+                aMap.setMyLocationEnabled(false);
+            }
+            
             // 设置地图UI控件
-            aMap.getUiSettings().setMyLocationButtonEnabled(true);
+            aMap.getUiSettings().setMyLocationButtonEnabled(!defaultCity.isEmpty());
             aMap.getUiSettings().setZoomControlsEnabled(true);
         }
     }
@@ -91,20 +111,50 @@ public class MapFragment extends Fragment implements AMapLocationListener {
 
     private void startLocation() {
         try {
-            // 初始化定位
-            AMapLocationClient.updatePrivacyShow(requireContext(), true, true);
-            AMapLocationClient.updatePrivacyAgree(requireContext(), true);
-            locationClient = new AMapLocationClient(requireContext());
-            locationClient.setLocationListener(this);
+            String defaultCity = requireContext()
+                .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                .getString(DEFAULT_CITY_KEY, "");
             
-            // 配置定位参数
-            AMapLocationClientOption option = new AMapLocationClientOption();
-            option.setLocationMode(AMapLocationClientOption.AMapLocationMode.Hight_Accuracy);
-            option.setOnceLocation(true);
-            locationClient.setLocationOption(option);
-            
-            // 开始定位
-            locationClient.startLocation();
+            if (!defaultCity.isEmpty()) {
+                // 如果有默认城市，使用地理编码服务定位到该城市
+                GeocodeSearch geocodeSearch = new GeocodeSearch(requireContext());
+                geocodeSearch.setOnGeocodeSearchListener(new GeocodeSearch.OnGeocodeSearchListener() {
+                    @Override
+                    public void onRegeocodeSearched(RegeocodeResult regeocodeResult, int i) {}
+
+                    @Override
+                    public void onGeocodeSearched(GeocodeResult result, int rCode) {
+                        if (rCode == 1000) {
+                            if (result != null && result.getGeocodeAddressList() != null 
+                                && !result.getGeocodeAddressList().isEmpty()) {
+                                GeocodeAddress address = result.getGeocodeAddressList().get(0);
+                                LatLng latLng = new LatLng(address.getLatLonPoint().getLatitude(),
+                                                         address.getLatLonPoint().getLongitude());
+                                cityNameText.setText(defaultCity);
+                                aMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15));
+                                // 禁用定位蓝点
+                                aMap.setMyLocationEnabled(false);
+                            }
+                        }
+                    }
+                });
+                
+                GeocodeQuery query = new GeocodeQuery(defaultCity, "");
+                geocodeSearch.getFromLocationNameAsyn(query);
+            } else {
+                // 否则使用定位服务获取当前位置
+                AMapLocationClient.updatePrivacyShow(requireContext(), true, true);
+                AMapLocationClient.updatePrivacyAgree(requireContext(), true);
+                locationClient = new AMapLocationClient(requireContext());
+                locationClient.setLocationListener(this);
+                
+                AMapLocationClientOption option = new AMapLocationClientOption();
+                option.setLocationMode(AMapLocationClientOption.AMapLocationMode.Hight_Accuracy);
+                option.setOnceLocation(true);
+                locationClient.setLocationOption(option);
+                
+                locationClient.startLocation();
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
