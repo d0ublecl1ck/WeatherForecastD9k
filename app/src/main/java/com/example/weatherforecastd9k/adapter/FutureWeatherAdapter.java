@@ -1,6 +1,7 @@
 package com.example.weatherforecastd9k.adapter;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.weatherforecastd9k.R;
 import com.example.weatherforecastd9k.network.WeatherResponse;
 import com.example.weatherforecastd9k.network.WeatherResponse.Forecast.Cast;
+import com.example.weatherforecastd9k.util.WeatherUtil;
 
 import java.util.List;
 
@@ -41,7 +43,7 @@ public class FutureWeatherAdapter extends RecyclerView.Adapter<FutureWeatherAdap
         Cast cast = weatherCasts.get(position + 1); // 跳过今天
         
         // 设置日期和基本信息
-        holder.dateText.setText(cast.getDate() + " 周" + cast.getWeek());
+        holder.dateText.setText(cast.getDate() + " " + WeatherUtil.convertWeekDay(cast.getWeek()));
         holder.weatherSummary.setText(String.format("%s %s°C/%s°C", 
             cast.getDayweather(), cast.getDaytemp(), cast.getNighttemp()));
 
@@ -51,6 +53,9 @@ public class FutureWeatherAdapter extends RecyclerView.Adapter<FutureWeatherAdap
         holder.windDirection.setText(cast.getDaywind());
         holder.windPower.setText(cast.getDaypower() + "级");
         holder.reportTime.setText("更新时间: " + reportTime);
+
+        // 设置天气图标
+        holder.weatherIcon.setImageResource(WeatherUtil.getWeatherIcon(cast.getDayweather()));
 
         // 处理展开/收起
         boolean isExpanded = position == expandedPosition;
@@ -104,6 +109,7 @@ public class FutureWeatherAdapter extends RecyclerView.Adapter<FutureWeatherAdap
         TextView windDirection;
         TextView windPower;
         TextView reportTime;
+        ImageView weatherIcon;
 
         ViewHolder(View view) {
             super(view);
@@ -117,6 +123,7 @@ public class FutureWeatherAdapter extends RecyclerView.Adapter<FutureWeatherAdap
             windDirection = view.findViewById(R.id.windDirection);
             windPower = view.findViewById(R.id.windPower);
             reportTime = view.findViewById(R.id.reportTime);
+            weatherIcon = view.findViewById(R.id.weatherIcon);
         }
     }
 } 

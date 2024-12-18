@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -20,6 +21,7 @@ import com.example.weatherforecastd9k.adapter.FutureWeatherAdapter;
 import com.example.weatherforecastd9k.network.RetrofitClient;
 import com.example.weatherforecastd9k.network.WeatherApi;
 import com.example.weatherforecastd9k.network.WeatherResponse;
+import com.example.weatherforecastd9k.util.WeatherUtil;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -35,19 +37,20 @@ public class TodayWeatherFragment extends Fragment {
     private RecyclerView futureWeatherList;
     private WeatherDetailsAdapter todayAdapter;
     private FutureWeatherAdapter futureAdapter;
+    private View rootView;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                            Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_today_weather, container, false);
+        rootView = inflater.inflate(R.layout.fragment_today_weather, container, false);
         
-        initViews(view);
+        initViews(rootView);
         setupRecyclerView();
         fetchWeatherData();
         
         swipeRefresh.setOnRefreshListener(this::fetchWeatherData);
         
-        return view;
+        return rootView;
     }
 
     private void initViews(View view) {
@@ -69,6 +72,18 @@ public class TodayWeatherFragment extends Fragment {
         futureWeatherList.setLayoutManager(new LinearLayoutManager(requireContext()));
         futureAdapter = new FutureWeatherAdapter(requireContext(), null, "");
         futureWeatherList.setAdapter(futureAdapter);
+    }
+
+    private void updateCurrentWeather(WeatherResponse.Forecast forecast, WeatherResponse.Forecast.Cast todayCast) {
+        cityName.setText(forecast.getCity());
+        weatherDesc.setText(todayCast.getDayweather());
+        temperature.setText(todayCast.getDaytemp() + "°C");
+        
+        // 设置天气图标
+        ImageView weatherIcon = rootView.findViewById(R.id.weatherIcon);
+        if (weatherIcon != null) {
+            weatherIcon.setImageResource(WeatherUtil.getWeatherIcon(todayCast.getDayweather()));
+        }
     }
 
     private void fetchWeatherData() {
@@ -95,12 +110,9 @@ public class TodayWeatherFragment extends Fragment {
                         WeatherResponse.Forecast forecast = response.body().getForecasts().get(0);
                         
                         // 更新当前天气卡片
-                        cityName.setText(forecast.getCity());
-                        
                         if (forecast.getCasts() != null && !forecast.getCasts().isEmpty()) {
                             WeatherResponse.Forecast.Cast todayCast = forecast.getCasts().get(0);
-                            weatherDesc.setText(todayCast.getDayweather());
-                            temperature.setText(todayCast.getDaytemp() + "°C");
+                            updateCurrentWeather(forecast, todayCast);
                             
                             // 更新今日天气详情
                             List<WeatherResponse.Forecast.Cast> todayList = new ArrayList<>();
