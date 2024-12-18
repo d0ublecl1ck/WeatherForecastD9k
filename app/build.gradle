@@ -27,6 +27,15 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+
+    configurations.all {
+        exclude group: 'com.android.support'
+        
+        resolutionStrategy {
+            force 'androidx.core:core:1.13.0'
+            force 'androidx.appcompat:appcompat:1.7.0'
+        }
+    }
 }
 
 dependencies {
@@ -51,4 +60,14 @@ dependencies {
     implementation 'com.amap.api:search:9.2.0'
     // 定位功能
     implementation 'com.amap.api:location:6.1.0'
+
+    // 城市选择器
+    implementation('liji.library.dev:citypickerview:0.7.0') {
+        exclude group: 'com.android.support'
+    }
+
+    // Preference依赖
+    implementation "androidx.preference:preference:1.2.1"
+
+    implementation 'de.hdodenhof:circleimageview:3.1.0'
 }

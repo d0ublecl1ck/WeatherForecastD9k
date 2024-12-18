@@ -3,7 +3,9 @@ package com.example.weatherforecastd9k.ui;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -30,6 +32,7 @@ import com.amap.api.services.geocoder.GeocodeQuery;
 import com.amap.api.services.geocoder.GeocodeResult;
 import com.amap.api.services.geocoder.GeocodeSearch;
 import com.amap.api.services.geocoder.RegeocodeResult;
+import com.amap.api.services.core.LatLonPoint;
 
 public class MapFragment extends Fragment implements AMapLocationListener {
     private MapView mapView;
@@ -75,26 +78,42 @@ public class MapFragment extends Fragment implements AMapLocationListener {
         if (aMap == null) {
             aMap = mapView.getMap();
             
-            // 检查是否有默认城市
-            String defaultCity = requireContext()
-                .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-                .getString(DEFAULT_CITY_KEY, "");
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+            boolean autoLocation = prefs.getBoolean("auto_location", true);
+            String defaultCity = prefs.getString("default_city", "");
             
-            if (defaultCity.isEmpty()) {
-                // 如果没有默认城市，才启用定位蓝点
-                MyLocationStyle myLocationStyle = new MyLocationStyle();
-                myLocationStyle.myLocationType(MyLocationStyle.LOCATION_TYPE_LOCATION_ROTATE);
-                myLocationStyle.interval(2000);
-                aMap.setMyLocationStyle(myLocationStyle);
-                aMap.setMyLocationEnabled(true);
-            } else {
-                // 有默认城市时，禁用定位蓝点
-                aMap.setMyLocationEnabled(false);
+            try {
+                if (!autoLocation && !defaultCity.isEmpty()) {
+                    // 使用默认城市
+                    GeocodeSearch geocodeSearch = new GeocodeSearch(requireContext());
+                    geocodeSearch.setOnGeocodeSearchListener(new GeocodeSearch.OnGeocodeSearchListener() {
+                        @Override
+                        public void onRegeocodeSearched(RegeocodeResult regeocodeResult, int i) {}
+
+                        @Override
+                        public void onGeocodeSearched(GeocodeResult result, int rCode) {
+                            if (rCode == 1000) {
+                                if (result != null && result.getGeocodeAddressList() != null 
+                                    && !result.getGeocodeAddressList().isEmpty()) {
+                                    GeocodeAddress address = result.getGeocodeAddressList().get(0);
+                                    LatLonPoint point = address.getLatLonPoint();
+                                    LatLng latLng = new LatLng(point.getLatitude(), point.getLongitude());
+                                    aMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15));
+                                    cityNameText.setText(defaultCity);
+                                }
+                            }
+                        }
+                    });
+                    
+                    GeocodeQuery query = new GeocodeQuery(defaultCity, "");
+                    geocodeSearch.getFromLocationNameAsyn(query);
+                } else {
+                    // 使用自动定位
+                    startLocation();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-            
-            // 设置地图UI控件
-            aMap.getUiSettings().setMyLocationButtonEnabled(!defaultCity.isEmpty());
-            aMap.getUiSettings().setZoomControlsEnabled(true);
         }
     }
 

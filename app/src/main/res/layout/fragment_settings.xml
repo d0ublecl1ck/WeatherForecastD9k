@@ -21,40 +21,25 @@
 
     </com.google.android.material.appbar.MaterialToolbar>
 
-    <LinearLayout
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:layout_height="0dp"
+        android:layout_weight="0.2"
+        android:gravity="center">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="默认城市"
-            android:textSize="16sp"
-            android:textColor="@color/primaryTextColor"/>
+        <de.hdodenhof.circleimageview.CircleImageView
+            android:id="@+id/avatarImage"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:layout_gravity="center"
+            android:src="@drawable/default_avatar"/>
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+    </FrameLayout>
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/defaultCityInput"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="输入城市名称（留空则自动定位）"/>
-
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/saveButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="保存"/>
-
-    </LinearLayout>
+    <FrameLayout
+        android:id="@android:id/list_container"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="0.8"/>
 
 </LinearLayout> 
