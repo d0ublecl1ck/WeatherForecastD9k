@@ -13,8 +13,25 @@ import com.example.weatherforecastd9k.model.WeatherDetail;
 import java.util.ArrayList;
 import java.util.List;
 
+// 天气详情的 RecyclerView 适配器
 public class WeatherDetailAdapter extends RecyclerView.Adapter<WeatherDetailAdapter.ViewHolder> {
+    // 存储天气详情数据的列表
     private List<WeatherDetail> details;
+    // 点击事件监听器
+    private OnItemClickListener listener;
+    
+    // 定义点击事件接口
+    public interface OnItemClickListener {
+        void onItemClick(int position);
+    }
+    
+    public void setOnItemClickListener(OnItemClickListener listener) {
+        this.listener = listener;
+    }
+    
+    public List<WeatherDetail> getDetails() {
+        return details;
+    }
     
     public WeatherDetailAdapter() {
         this.details = new ArrayList<>();
@@ -25,10 +42,11 @@ public class WeatherDetailAdapter extends RecyclerView.Adapter<WeatherDetailAdap
         notifyDataSetChanged();
     }
     
+    // ViewHolder 类用于缓存 item 视图中的组件引用
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        ImageView ivWeatherIcon;
-        TextView tvDetailTitle;
-        TextView tvDetailValue;
+        ImageView ivWeatherIcon;    // 天气图标
+        TextView tvDetailTitle;     // 详情标题
+        TextView tvDetailValue;     // 详情数值
         
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -38,6 +56,7 @@ public class WeatherDetailAdapter extends RecyclerView.Adapter<WeatherDetailAdap
         }
     }
     
+    // 创建 ViewHolder，加载 item 布局
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -46,14 +65,24 @@ public class WeatherDetailAdapter extends RecyclerView.Adapter<WeatherDetailAdap
         return new ViewHolder(view);
     }
     
+    // 绑定数据到 ViewHolder
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         WeatherDetail detail = details.get(position);
+        // 设置天气图标、标题和数值
         holder.ivWeatherIcon.setImageResource(detail.getIconRes());
         holder.tvDetailTitle.setText(detail.getTitle());
         holder.tvDetailValue.setText(detail.getValue());
+        
+        // 设置点击事件监听器
+        holder.itemView.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onItemClick(position);
+            }
+        });
     }
     
+    // 返回数据列表的大小
     @Override
     public int getItemCount() {
         return details != null ? details.size() : 0;

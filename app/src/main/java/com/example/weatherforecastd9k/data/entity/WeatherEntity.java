@@ -9,6 +9,7 @@ public class WeatherEntity {
     @PrimaryKey
     @NonNull
     private String city;
+    private String province;
     private String weather;
     private String temperature;
     private String windDirection;
@@ -18,10 +19,11 @@ public class WeatherEntity {
     private long timestamp;
 
     // 构造函数
-    public WeatherEntity(String city, String weather, String temperature, 
+    public WeatherEntity(String city, String province, String weather, String temperature, 
                         String windDirection, String windPower, 
                         String humidity, String reportTime) {
         this.city = city;
+        this.province = province;
         this.weather = weather;
         this.temperature = temperature;
         this.windDirection = windDirection;
@@ -34,6 +36,10 @@ public class WeatherEntity {
     // Getters
     public String getCity() {
         return city;
+    }
+
+    public String getProvince() {
+        return province;
     }
 
     public String getWeather() {
@@ -67,6 +73,10 @@ public class WeatherEntity {
     // Setters
     public void setCity(String city) {
         this.city = city;
+    }
+
+    public void setProvince(String province) {
+        this.province = province;
     }
 
     public void setWeather(String weather) {
