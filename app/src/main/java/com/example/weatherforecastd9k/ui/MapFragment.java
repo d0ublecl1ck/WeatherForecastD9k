@@ -82,86 +82,78 @@ public class MapFragment extends Fragment implements AMapLocationListener {
             boolean autoLocation = prefs.getBoolean("auto_location", true);
             String defaultCity = prefs.getString("default_city", "");
             
-            try {
-                if (!autoLocation && !defaultCity.isEmpty()) {
-                    // 使用默认城市
-                    GeocodeSearch geocodeSearch = new GeocodeSearch(requireContext());
-                    geocodeSearch.setOnGeocodeSearchListener(new GeocodeSearch.OnGeocodeSearchListener() {
-                        @Override
-                        public void onRegeocodeSearched(RegeocodeResult regeocodeResult, int i) {}
-
-                        @Override
-                        public void onGeocodeSearched(GeocodeResult result, int rCode) {
-                            if (rCode == 1000) {
-                                if (result != null && result.getGeocodeAddressList() != null 
-                                    && !result.getGeocodeAddressList().isEmpty()) {
-                                    GeocodeAddress address = result.getGeocodeAddressList().get(0);
-                                    LatLonPoint point = address.getLatLonPoint();
-                                    LatLng latLng = new LatLng(point.getLatitude(), point.getLongitude());
-                                    aMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15));
-                                    cityNameText.setText(defaultCity);
-                                }
-                            }
-                        }
-                    });
-                    
-                    GeocodeQuery query = new GeocodeQuery(defaultCity, "");
-                    geocodeSearch.getFromLocationNameAsyn(query);
-                } else {
-                    // 使用自动定位
-                    startLocation();
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
+            // 根据设置决定是否启用定位蓝点
+            MyLocationStyle myLocationStyle = new MyLocationStyle();
+            myLocationStyle.myLocationType(MyLocationStyle.LOCATION_TYPE_LOCATION_ROTATE);
+            myLocationStyle.interval(2000);
+            aMap.setMyLocationStyle(myLocationStyle);
+            aMap.setMyLocationEnabled(autoLocation);
+            
+            // 设置地图UI控件
+            aMap.getUiSettings().setMyLocationButtonEnabled(autoLocation);
+            aMap.getUiSettings().setZoomControlsEnabled(true);
+            
+            // 根据设置决定是否自动定位
+            if (!autoLocation && !defaultCity.isEmpty()) {
+                moveToDefaultCity(defaultCity);
             }
         }
     }
 
+    private void moveToDefaultCity(String city) {
+        try {
+            GeocodeSearch geocodeSearch = new GeocodeSearch(requireContext());
+            geocodeSearch.setOnGeocodeSearchListener(new GeocodeSearch.OnGeocodeSearchListener() {
+                @Override
+                public void onRegeocodeSearched(RegeocodeResult regeocodeResult, int i) {}
+
+                @Override
+                public void onGeocodeSearched(GeocodeResult result, int rCode) {
+                    if (rCode == 1000) {
+                        if (result != null && result.getGeocodeAddressList() != null 
+                            && !result.getGeocodeAddressList().isEmpty()) {
+                            GeocodeAddress address = result.getGeocodeAddressList().get(0);
+                            LatLng latLng = new LatLng(address.getLatLonPoint().getLatitude(),
+                                                     address.getLatLonPoint().getLongitude());
+                            aMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15));
+                            cityNameText.setText(city);
+                        }
+                    }
+                }
+            });
+            
+            GeocodeQuery query = new GeocodeQuery(city, "");
+            geocodeSearch.getFromLocationNameAsyn(query);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     private void checkPermissions() {
-        if (ContextCompat.checkSelfPermission(requireContext(),
-                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(requireActivity(),
-                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                    PERMISSION_REQUEST_CODE);
-        } else {
-            startLocation();
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+        boolean autoLocation = prefs.getBoolean("auto_location", true);
+        
+        // 只有在自动定位开启时才请求权限
+        if (autoLocation) {
+            if (ContextCompat.checkSelfPermission(requireContext(),
+                    Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(requireActivity(),
+                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                        PERMISSION_REQUEST_CODE);
+            } else {
+                startLocation();
+            }
         }
     }
 
     private void startLocation() {
-        try {
-            String defaultCity = requireContext()
-                .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-                .getString(DEFAULT_CITY_KEY, "");
-            
-            if (!defaultCity.isEmpty()) {
-                // 如果有默认城市，使用地理编码服务定位到该城市
-                GeocodeSearch geocodeSearch = new GeocodeSearch(requireContext());
-                geocodeSearch.setOnGeocodeSearchListener(new GeocodeSearch.OnGeocodeSearchListener() {
-                    @Override
-                    public void onRegeocodeSearched(RegeocodeResult regeocodeResult, int i) {}
-
-                    @Override
-                    public void onGeocodeSearched(GeocodeResult result, int rCode) {
-                        if (rCode == 1000) {
-                            if (result != null && result.getGeocodeAddressList() != null 
-                                && !result.getGeocodeAddressList().isEmpty()) {
-                                GeocodeAddress address = result.getGeocodeAddressList().get(0);
-                                LatLng latLng = new LatLng(address.getLatLonPoint().getLatitude(),
-                                                         address.getLatLonPoint().getLongitude());
-                                cityNameText.setText(defaultCity);
-                                aMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15));
-                                // 禁用定位蓝点
-                                aMap.setMyLocationEnabled(false);
-                            }
-                        }
-                    }
-                });
-                
-                GeocodeQuery query = new GeocodeQuery(defaultCity, "");
-                geocodeSearch.getFromLocationNameAsyn(query);
-            } else {
-                // 否则使用定位服务获取当前位置
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+        boolean autoLocation = prefs.getBoolean("auto_location", true);
+        String defaultCity = prefs.getString("default_city", "");
+        
+        // 只有在自动定位开启时才进行定位
+        if (autoLocation) {
+            try {
                 AMapLocationClient.updatePrivacyShow(requireContext(), true, true);
                 AMapLocationClient.updatePrivacyAgree(requireContext(), true);
                 locationClient = new AMapLocationClient(requireContext());
@@ -173,9 +165,11 @@ public class MapFragment extends Fragment implements AMapLocationListener {
                 locationClient.setLocationOption(option);
                 
                 locationClient.startLocation();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        } else if (!defaultCity.isEmpty()) {
+            moveToDefaultCity(defaultCity);
         }
     }
 
@@ -183,13 +177,16 @@ public class MapFragment extends Fragment implements AMapLocationListener {
     public void onLocationChanged(AMapLocation aMapLocation) {
         if (aMapLocation != null) {
             if (aMapLocation.getErrorCode() == 0) {
-                // 定位成功
-                cityNameText.setText(aMapLocation.getCity());
-                // 移动地图到当前位置
-                LatLng latLng = new LatLng(aMapLocation.getLatitude(), aMapLocation.getLongitude());
-                aMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15));
+                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+                boolean autoLocation = prefs.getBoolean("auto_location", true);
+                
+                // 只有在自动定位开启时才更新位置
+                if (autoLocation) {
+                    cityNameText.setText(aMapLocation.getCity());
+                    LatLng latLng = new LatLng(aMapLocation.getLatitude(), aMapLocation.getLongitude());
+                    aMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15));
+                }
             } else {
-                // 定位失败
                 Toast.makeText(requireContext(), 
                     "定位失败: " + aMapLocation.getErrorInfo(), 
                     Toast.LENGTH_SHORT).show();

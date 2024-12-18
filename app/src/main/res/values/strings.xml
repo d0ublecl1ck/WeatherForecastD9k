@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">WeatherForecastD9k</string>
+    <string name="amap_web_key">a7bc6e32796cf9d4858d5cbd6c8296db</string>
 </resources>
