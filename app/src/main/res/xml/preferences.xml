@@ -30,6 +30,14 @@
             android:title="自动定位"
             android:summary="启用后将自动定位到当前城市"
             android:defaultValue="true"/>
+
+        <SeekBarPreference
+            android:key="max_history_size"
+            android:title="历史记录数量"
+            android:defaultValue="5"
+            android:max="10"
+            app:min="3"
+            app:showSeekBarValue="true"/>
     </PreferenceCategory>
 
 </PreferenceScreen> 

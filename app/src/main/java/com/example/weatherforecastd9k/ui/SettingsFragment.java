@@ -45,6 +45,7 @@ import android.util.Log;
 import com.example.weatherforecastd9k.network.DistrictApi;
 import com.example.weatherforecastd9k.network.DistrictResponse;
 import com.example.weatherforecastd9k.network.RetrofitClient;
+import com.example.weatherforecastd9k.util.HistoryCityManager;
 
 public class SettingsFragment extends PreferenceFragmentCompat implements
         SharedPreferences.OnSharedPreferenceChangeListener {
@@ -224,7 +225,6 @@ public class SettingsFragment extends PreferenceFragmentCompat implements
                                         .create()
                                         .toJson(response.body()));
 
-
                                 String adcode = response.body().getDistricts().get(0).getAdcode();
                                 
                                 // 保存城市信息和编码
@@ -239,6 +239,10 @@ public class SettingsFragment extends PreferenceFragmentCompat implements
                                 ((SwitchPreferenceCompat) findPreference("auto_location")).setChecked(false);
                                 Toast.makeText(requireContext(), 
                                     "已设置默认城市: " + fullLocation, Toast.LENGTH_SHORT).show();
+
+                                // 在这里添加历史记录
+                                HistoryCityManager historyManager = new HistoryCityManager(requireContext());
+                                historyManager.addCity(fullLocation, adcode);
                             } else {
                                 Toast.makeText(requireContext(), 
                                     "获取城市编码失败", Toast.LENGTH_SHORT).show();
