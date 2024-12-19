@@ -23,13 +23,16 @@
 - 🖼️ Glide 图片加载
 - 📍 高德地图定位 SDK
 
+## 测试环境
+- 真机: IQOO Neo9S Pro+ | Android 15
+- 模拟器: Pixel 2 API 30
+
 ## 截图
 ![alt text](imgs/register.jpg) ![alt text](imgs/login.jpg) ![alt text](imgs/map.jpg)![alt text](imgs/Weather1.jpg)  ![alt text](imgs/Weather2.jpg) ![alt text](imgs/recommend.jpg) ![alt text](imgs/history.jpg) ![alt text](imgs/setting.jpg)
 
 ## 开始使用
 
-1. 克隆仓库
-```bash
+1. 克隆仓库```bash
 git clone https://github.com/yourusername/WeatherForecastD9k.git
 ```
 
