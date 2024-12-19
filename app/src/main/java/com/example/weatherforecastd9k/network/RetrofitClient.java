@@ -1,5 +1,10 @@
 package com.example.weatherforecastd9k.network;
 
+import android.content.Context;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
+import android.os.Bundle;
+
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
@@ -8,9 +13,20 @@ public class RetrofitClient {
     private static Retrofit bingRetrofit;
     private static final String BASE_URL = "https://restapi.amap.com/";
     private static final String BING_BASE_URL = "https://ipgeo-bingpic.hf.space/";
-    private static final String API_KEY = "a7bc6e32796cf9d4858d5cbd6c8296db";
     private static Retrofit qrCodeRetrofit;
     private static final String QRCODE_BASE_URL = "https://api.pwmqr.com/";
+    private static String apiKey;
+
+    public static void init(Context context) {
+        try {
+            ApplicationInfo ai = context.getPackageManager()
+                .getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
+            Bundle bundle = ai.metaData;
+            apiKey = bundle.getString("weather.api.key");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
     public static Retrofit getInstance() {
         if (retrofit == null) {
@@ -40,7 +56,10 @@ public class RetrofitClient {
     }
 
     public static String getApiKey() {
-        return API_KEY;
+        if (apiKey == null) {
+            throw new IllegalStateException("API Key not initialized. Call init() first.");
+        }
+        return apiKey;
     }
 
     public static Retrofit getQrCodeInstance() {

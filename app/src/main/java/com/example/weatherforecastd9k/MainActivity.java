@@ -10,6 +10,7 @@ import com.example.weatherforecastd9k.ui.HistoryFragment;
 import com.example.weatherforecastd9k.ui.SettingsFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.example.weatherforecastd9k.util.SessionManager;
+import com.example.weatherforecastd9k.network.RetrofitClient;
 
 public class MainActivity extends AppCompatActivity {
     private SessionManager sessionManager;
@@ -17,6 +18,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        RetrofitClient.init(this);
         
         sessionManager = new SessionManager(this);
         
@@ -57,7 +59,7 @@ public class MainActivity extends AppCompatActivity {
             getSupportFragmentManager().beginTransaction()
                 .replace(R.id.nav_host_fragment, new MapFragment())
                 .commit();
-            // 设置底部导航栏��认选中项
+            // 设置底部导航栏认选中项
             bottomNav.setSelectedItemId(R.id.navigation_map);
         }
     }

@@ -42,6 +42,8 @@ AMAP_KEY=你的高德地图KEY
 WEATHER_API_KEY=你的天气API KEY
 ```
 
+~补~药~使~用~我~的~API~KEY~啊~
+
 4. 运行项目
 
 ## API 来源
