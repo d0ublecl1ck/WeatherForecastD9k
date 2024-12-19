@@ -10,6 +10,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -18,14 +20,9 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.example.weatherforecastd9k.R;
 import com.example.weatherforecastd9k.adapter.WeatherDetailsAdapter;
 import com.example.weatherforecastd9k.adapter.FutureWeatherAdapter;
-import com.example.weatherforecastd9k.network.RetrofitClient;
-import com.example.weatherforecastd9k.network.WeatherApi;
 import com.example.weatherforecastd9k.network.WeatherResponse;
 import com.example.weatherforecastd9k.util.WeatherUtil;
-
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
+import com.example.weatherforecastd9k.viewmodel.WeatherViewModel;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +35,7 @@ public class TodayWeatherFragment extends Fragment {
     private WeatherDetailsAdapter todayAdapter;
     private FutureWeatherAdapter futureAdapter;
     private View rootView;
+    private WeatherViewModel viewModel;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -45,10 +43,8 @@ public class TodayWeatherFragment extends Fragment {
         rootView = inflater.inflate(R.layout.fragment_today_weather, container, false);
         
         initViews(rootView);
+        setupViewModel();
         setupRecyclerView();
-        fetchWeatherData();
-        
-        swipeRefresh.setOnRefreshListener(this::fetchWeatherData);
         
         return rootView;
     }
@@ -74,6 +70,48 @@ public class TodayWeatherFragment extends Fragment {
         futureWeatherList.setAdapter(futureAdapter);
     }
 
+    private void setupViewModel() {
+        viewModel = new ViewModelProvider(this).get(WeatherViewModel.class);
+        
+        viewModel.getIsLoading().observe(getViewLifecycleOwner(), 
+            isLoading -> swipeRefresh.setRefreshing(isLoading));
+            
+        viewModel.getErrorMessage().observe(getViewLifecycleOwner(), 
+            message -> {
+                if (message != null) {
+                    Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
+                }
+            });
+
+        fetchWeatherData();
+    }
+
+    private void fetchWeatherData() {
+        LiveData<WeatherResponse> weatherData = viewModel.getWeatherData();
+        if (weatherData != null) {
+            weatherData.observe(getViewLifecycleOwner(), response -> {
+                if (response != null && response.getForecasts() != null 
+                    && !response.getForecasts().isEmpty()) {
+                    WeatherResponse.Forecast forecast = response.getForecasts().get(0);
+                    if (forecast.getCasts() != null && !forecast.getCasts().isEmpty()) {
+                        updateWeatherUI(forecast);
+                    }
+                }
+            });
+        }
+    }
+
+    private void updateWeatherUI(WeatherResponse.Forecast forecast) {
+        WeatherResponse.Forecast.Cast todayCast = forecast.getCasts().get(0);
+        updateCurrentWeather(forecast, todayCast);
+        
+        List<WeatherResponse.Forecast.Cast> todayList = new ArrayList<>();
+        todayList.add(todayCast);
+        todayAdapter.updateData(todayList, forecast.getReporttime());
+        
+        futureAdapter.updateData(forecast.getCasts(), forecast.getReporttime());
+    }
+
     private void updateCurrentWeather(WeatherResponse.Forecast forecast, WeatherResponse.Forecast.Cast todayCast) {
         cityName.setText(forecast.getCity());
         weatherDesc.setText(todayCast.getDayweather());
@@ -84,56 +122,5 @@ public class TodayWeatherFragment extends Fragment {
         if (weatherIcon != null) {
             weatherIcon.setImageResource(WeatherUtil.getWeatherIcon(todayCast.getDayweather()));
         }
-    }
-
-    private void fetchWeatherData() {
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
-        String cityCode = prefs.getString("city_code", "");
-        
-        if (cityCode.isEmpty()) {
-            Toast.makeText(requireContext(), "请先选择城市", Toast.LENGTH_SHORT).show();
-            swipeRefresh.setRefreshing(false);
-            return;
-        }
-        
-        RetrofitClient.create(WeatherApi.class)
-            .getWeather(RetrofitClient.getApiKey(), cityCode, "all")
-            .enqueue(new Callback<WeatherResponse>() {
-                @Override
-                public void onResponse(Call<WeatherResponse> call, Response<WeatherResponse> response) {
-                    swipeRefresh.setRefreshing(false);
-                    
-                    if (response.isSuccessful() && response.body() != null 
-                            && response.body().getForecasts() != null 
-                            && !response.body().getForecasts().isEmpty()) {
-                        
-                        WeatherResponse.Forecast forecast = response.body().getForecasts().get(0);
-                        
-                        // 更新当前天气卡片
-                        if (forecast.getCasts() != null && !forecast.getCasts().isEmpty()) {
-                            WeatherResponse.Forecast.Cast todayCast = forecast.getCasts().get(0);
-                            updateCurrentWeather(forecast, todayCast);
-                            
-                            // 更新今日天气详情
-                            List<WeatherResponse.Forecast.Cast> todayList = new ArrayList<>();
-                            todayList.add(todayCast);
-                            todayAdapter.updateData(todayList, forecast.getReporttime());
-                            
-                            // 更新未来天气列表
-                            futureAdapter.updateData(forecast.getCasts(), forecast.getReporttime());
-                        }
-                    } else {
-                        Toast.makeText(requireContext(), 
-                            "获取天气数据失败", Toast.LENGTH_SHORT).show();
-                    }
-                }
-
-                @Override
-                public void onFailure(Call<WeatherResponse> call, Throwable t) {
-                    swipeRefresh.setRefreshing(false);
-                    Toast.makeText(requireContext(), 
-                        "网络请求失败: " + t.getMessage(), Toast.LENGTH_SHORT).show();
-                }
-            });
     }
 } 
