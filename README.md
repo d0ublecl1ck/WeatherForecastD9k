@@ -24,8 +24,7 @@
 - 📍 高德地图定位 SDK
 
 ## 截图
-
-懒得截
+![alt text](imgs/register.jpg) ![alt text](imgs/login.jpg) ![alt text](imgs/map.jpg)![alt text](imgs/Weather1.jpg)  ![alt text](imgs/Weather2.jpg) ![alt text](imgs/recommend.jpg) ![alt text](imgs/history.jpg) ![alt text](imgs/setting.jpg)
 
 ## 开始使用
 
