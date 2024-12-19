@@ -12,9 +12,12 @@ import android.provider.MediaStore;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
@@ -23,7 +26,9 @@ import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceManager;
 import androidx.preference.SwitchPreferenceCompat;
 
+import com.example.weatherforecastd9k.LoginActivity;
 import com.example.weatherforecastd9k.R;
+import com.example.weatherforecastd9k.db.AppDatabase;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.lljjcoder.citypickerview.widget.CityPicker;
@@ -46,6 +51,17 @@ import com.example.weatherforecastd9k.network.DistrictApi;
 import com.example.weatherforecastd9k.network.DistrictResponse;
 import com.example.weatherforecastd9k.network.RetrofitClient;
 import com.example.weatherforecastd9k.util.HistoryCityManager;
+import com.example.weatherforecastd9k.repository.UserRepository;
+import com.example.weatherforecastd9k.util.SessionManager;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.button.MaterialButton;
+import android.app.Dialog;
+import android.graphics.drawable.ColorDrawable;
+import android.view.Window;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class SettingsFragment extends PreferenceFragmentCompat implements
         SharedPreferences.OnSharedPreferenceChangeListener {
@@ -55,12 +71,23 @@ public class SettingsFragment extends PreferenceFragmentCompat implements
     private SharedPreferences prefs;
     private CircleImageView avatarImage;
     private static final String TAG = "SettingsFragment";
+    private UserRepository userRepository;
+    private SessionManager sessionManager;
+    private ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         setPreferencesFromResource(R.xml.preferences, rootKey);
         prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+        userRepository = new UserRepository(requireContext());
+        sessionManager = new SessionManager(requireContext());
         
+        // 移除用户名设置
+        Preference usernamePref = findPreference("username");
+        if (usernamePref != null) {
+            getPreferenceScreen().removePreference(usernamePref);
+        }
+
         // 设置头像点击事件
         findPreference("avatar").setOnPreferenceClickListener(preference -> {
             openGallery();
@@ -87,6 +114,26 @@ public class SettingsFragment extends PreferenceFragmentCompat implements
                 prefs.edit().putString("default_city", "").apply();
                 findPreference("default_city").setSummary("自动定位已开启");
             }
+            return true;
+        });
+
+        // 添加退出登录点击事件
+        findPreference("logout").setOnPreferenceClickListener(preference -> {
+            new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("退出登录")
+                .setMessage("确定要退出登录吗？")
+                .setPositiveButton("确定", (dialog, which) -> {
+                    // 清除会话和记住的密码
+                    sessionManager.clearSession();
+                    clearSavedCredentials();
+                    
+                    // 跳转到登录页面
+                    Intent intent = new Intent(requireContext(), LoginActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                })
+                .setNegativeButton("取消", null)
+                .show();
             return true;
         });
 
@@ -175,8 +222,58 @@ public class SettingsFragment extends PreferenceFragmentCompat implements
     }
 
     private void showChangePasswordDialog() {
-        ChangePasswordDialog dialog = new ChangePasswordDialog();
-        dialog.show(getParentFragmentManager(), "ChangePasswordDialog");
+        Dialog dialog = new Dialog(requireContext());
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_change_password, null);
+        dialog.setContentView(dialogView);
+
+        TextInputEditText oldPasswordInput = dialogView.findViewById(R.id.oldPassword);
+        TextInputEditText newPasswordInput = dialogView.findViewById(R.id.newPassword);
+        TextInputEditText confirmPasswordInput = dialogView.findViewById(R.id.confirmPassword);
+        MaterialButton cancelButton = dialogView.findViewById(R.id.cancelButton);
+        MaterialButton confirmButton = dialogView.findViewById(R.id.confirmButton);
+
+        // 设置对话框宽度为屏幕宽度的90%
+        if (dialog.getWindow() != null) {
+            WindowManager.LayoutParams params = dialog.getWindow().getAttributes();
+            params.width = (int)(getResources().getDisplayMetrics().widthPixels * 0.9);
+            dialog.getWindow().setAttributes(params);
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        }
+
+        cancelButton.setOnClickListener(v -> dialog.dismiss());
+
+        confirmButton.setOnClickListener(v -> {
+            String oldPassword = oldPasswordInput.getText().toString().trim();
+            String newPassword = newPasswordInput.getText().toString().trim();
+            String confirmPassword = confirmPasswordInput.getText().toString().trim();
+
+            if (oldPassword.isEmpty() || newPassword.isEmpty() || confirmPassword.isEmpty()) {
+                Toast.makeText(requireContext(), "请填写所有字段", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (!newPassword.equals(confirmPassword)) {
+                Toast.makeText(requireContext(), "两次输入的新密码不一致", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            String currentUsername = sessionManager.getUsername();
+            userRepository.changePassword(currentUsername, oldPassword, newPassword)
+                .observe(this, success -> {
+                    if (success) {
+                        Toast.makeText(requireContext(), "密码修改成功", Toast.LENGTH_SHORT).show();
+                        dialog.dismiss();
+                        sessionManager.clearSession();
+                        startActivity(new Intent(requireContext(), LoginActivity.class));
+                        requireActivity().finish();
+                    } else {
+                        Toast.makeText(requireContext(), "原密码错误", Toast.LENGTH_SHORT).show();
+                    }
+                });
+        });
+
+        dialog.show();
     }
 
     private void showCityPicker() {
@@ -227,7 +324,7 @@ public class SettingsFragment extends PreferenceFragmentCompat implements
 
                                 String adcode = response.body().getDistricts().get(0).getAdcode();
                                 
-                                // 保存城市信息和编码
+                                // 保存城市信息编码
                                 prefs.edit()
                                     .putString("default_city", fullLocation)
                                     .putString("city_code", adcode)
@@ -300,13 +397,12 @@ public class SettingsFragment extends PreferenceFragmentCompat implements
     }
 
     private void updateSummaries() {
-        // 更新用户名摘要
-        String username = prefs.getString("username", "");
-        findPreference("username").setSummary(username.isEmpty() ? "未设置" : username);
-
-        // 更新默认城市摘要
+        // 只更新默认城市摘要
         String defaultCity = prefs.getString("default_city", "");
-        findPreference("default_city").setSummary(defaultCity.isEmpty() ? "点击选择" : defaultCity);
+        Preference cityPreference = findPreference("default_city");
+        if (cityPreference != null) {
+            cityPreference.setSummary(defaultCity.isEmpty() ? "点击选择" : defaultCity);
+        }
     }
 
     @Override
@@ -324,5 +420,33 @@ public class SettingsFragment extends PreferenceFragmentCompat implements
     public void onPause() {
         super.onPause();
         prefs.unregisterOnSharedPreferenceChangeListener(this);
+    }
+
+    private void clearSavedCredentials() {
+        // 清除记住的密码
+        executorService.execute(() -> {
+            try {
+                AppDatabase db = AppDatabase.getInstance(requireContext());
+                db.userDao().deleteAll();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+
+        // 清除其他相关的SharedPreferences数据
+        prefs.edit()
+            .remove("username")
+            .remove("password")
+            .remove("remember_password")
+            .apply();
+    }
+
+    // 在onDestroy中关闭ExecutorService
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if (executorService != null && !executorService.isShutdown()) {
+            executorService.shutdown();
+        }
     }
 } 

@@ -6,30 +6,34 @@
         <Preference
             android:key="avatar"
             android:title="头像"
-            android:summary="点击更换头像"/>
-
-        <EditTextPreference
-            android:key="username"
-            android:title="用户名"
-            android:summary="当前用户名"/>
+            android:summary="点击更换头像"
+            android:icon="@drawable/ic_avatar_24dp"/>
 
         <Preference
             android:key="change_password"
             android:title="修改密码"
-            android:summary="点击修改密码"/>
+            android:summary="点击修改密码"
+            android:icon="@drawable/ic_password_24dp"/>
+
+        <Preference
+            android:key="logout"
+            android:title="退出登录"
+            android:icon="@drawable/ic_logout_24dp"/>
     </PreferenceCategory>
 
     <PreferenceCategory android:title="应用设置">
         <Preference
             android:key="default_city"
             android:title="默认城市"
-            android:summary="点击选择默认城市"/>
+            android:summary="点击选择默认城市"
+            android:icon="@drawable/ic_location_city_24dp"/>
 
         <SwitchPreferenceCompat
             android:key="auto_location"
             android:title="自动定位"
             android:summary="启用后将自动定位到当前城市"
-            android:defaultValue="true"/>
+            android:defaultValue="true"
+            android:icon="@drawable/ic_my_location_24dp"/>
 
         <SeekBarPreference
             android:key="max_history_size"
@@ -37,7 +41,8 @@
             android:defaultValue="5"
             android:max="10"
             app:min="3"
-            app:showSeekBarValue="true"/>
+            app:showSeekBarValue="true"
+            android:icon="@drawable/ic_history_24dp"/>
     </PreferenceCategory>
 
 </PreferenceScreen> 
