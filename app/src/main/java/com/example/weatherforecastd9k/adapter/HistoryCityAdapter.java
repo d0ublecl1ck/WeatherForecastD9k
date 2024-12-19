@@ -27,14 +27,14 @@ public class HistoryCityAdapter extends RecyclerView.Adapter<HistoryCityAdapter.
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
-                .inflate(android.R.layout.simple_list_item_1, parent, false);
+                .inflate(R.layout.item_history_city, parent, false);
         return new ViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         HistoryCity city = cities.get(position);
-        holder.textView.setText(city.cityName);
+        holder.cityName.setText(city.cityName);
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) {
                 listener.onCityClick(city);
@@ -53,11 +53,11 @@ public class HistoryCityAdapter extends RecyclerView.Adapter<HistoryCityAdapter.
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView textView;
+        TextView cityName;
 
         ViewHolder(View view) {
             super(view);
-            textView = view.findViewById(android.R.id.text1);
+            cityName = view.findViewById(R.id.cityName);
         }
     }
 }
